@@ -86,8 +86,10 @@ func NewPublishListResponse() *PublishListResponse {
 // Po2vo 将 videoPo -> video
 func (po *VideoPo) Po2vo() *Video {
 	// po -> vo
+	// 因为现在对比了一下两个类，字段是完全一样的，所以就直接转换了
 	return &Video{
 		Id:       po.Id,
+		AuthorId: po.AuthorId,
 		PlayUrl:  utils.URLPrefix(po.PlayUrl),
 		CoverUrl: utils.URLPrefix(po.CoverUrl),
 		Title:    po.Title,

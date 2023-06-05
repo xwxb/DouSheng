@@ -147,5 +147,6 @@ func (h *Handler) feed(ctx *gin.Context) error {
 		CodeMsg:         custom.Ok(constant.ACQUIRE_OK),
 		FeedSetResponse: videos,
 	})
+	
 	return nil
 }
