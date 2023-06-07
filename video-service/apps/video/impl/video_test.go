@@ -89,17 +89,57 @@ func TestFeedVideos(t *testing.T) {
 }
 
 func TestPublishList(t *testing.T) {
+	// ------------- 测试准备 -----------------
+
 	should := assert.New(t)
 
+	// 创建一个真实的 GIN context
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	// 设置请求参数
 	request := video.NewPublishListRequest()
 	request.UserId = 17
 
-	set, err := service.PublishList(context.Background(), request)
+	// 将请求参数绑定到 GIN context
+	ctx.Set("request", request)
 
-	if should.NoError(err) {
-		t.Log(set.VideoList)
+	// 调用被测试的函数
+	set, err := service.PublishList(ctx, request)
+
+	// ------------- 简单调用测试 -----------------
+
+	if should.NoError(err, "不出现错误") && should.NotNil(set, "不返回空响应") {
+		t.Log("VideoList:", set.VideoList)
+	} else if err != nil {
+		// 错误处理逻辑
+		t.Errorf("PublishList returned an error: %v", err)
 	}
+
+	// 有待添加具体错误类型的判断
+
+	// ------------- 并发查询测试 -----------------
+	var wg sync.WaitGroup
+	const numWorkers = 10
+	wg.Add(numWorkers)
+
+	for i := 0; i < numWorkers; i++ {
+		go func() {
+			defer wg.Done()
+
+			request := video.NewPublishListRequest()
+			request.UserId = 17
+
+			set, err := service.PublishList(context.Background(), request)
+
+			if should.NoError(err, "不出现错误") && should.NotNil(set, "不返回空响应") {
+				t.Log("VideoList:", set.VideoList)
+			}
+		}()
+	}
+
+	wg.Wait()
 }
+
 
 func TestGetVideo(t *testing.T) {
 	should := assert.New(t)

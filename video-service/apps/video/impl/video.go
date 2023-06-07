@@ -80,9 +80,40 @@ func (s *videoServiceImpl) PublishVideo(ctx context.Context, req *video.PublishV
 func (s *videoServiceImpl) PublishList(ctx context.Context, req *video.PublishListRequest) (
 	*video.PublishListResponse, error) {
 
-	return nil, status.Errorf(codes.Unimplemented, "method PublishList not implemented")
+	// 1、校验参数[防止GRPC调用时参数异常]
+	if err := req.Validate(); err != nil {
+		s.l.Errorf("video: PublishList 参数校验失败：%s", err.Error())
+		return nil, status.Error(codes.InvalidArgument,
+			constant.Code2Msg(constant.ERROR_ARGS_VALIDATE))
+	}
+
+	// 2、根据用户ID获取视频列表
+	pos, err := s.listFromUserId(ctx, req.UserId)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, constant.Code2Msg(constant.ERROR_ACQUIRE))
+	}
+
+	// 3、组合视频的用户信息返回，传入不带 token 的 context
+	return s.composeUserListResp(ctx, pos)
 }
 
+// 获取用户主页的视频列表
+// 根据查到的视频 PO，组装相关信息
+func (s *videoServiceImpl) composeUserListResp(ctx context.Context, pos []*video.VideoPo) (
+	*video.PublishListResponse, error) {
+	
+	set := video.NewPublishListResponse()
+	if pos == nil || len(pos) <= 0 {
+		// 只是没有查到，不应该抛异常出去
+		return set, nil
+	}
+
+	return &video.PublishListResponse{
+		VideoList: s.pos2vos(pos),
+	}, nil
+}
+
+// 这个方法用于从视频请求中获取视频，是给上传接口用的
 func (s *videoServiceImpl) GetVideo(ctx context.Context, req *video.GetVideoRequest) (*video.Video, error) {
 
 	return nil, status.Errorf(codes.Unimplemented, "method PublishList not implemented")
