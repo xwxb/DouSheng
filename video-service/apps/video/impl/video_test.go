@@ -38,6 +38,7 @@ func TestPublishVideo(t *testing.T) {
 }
 
 
+// 测试了两次请求查到的视频是不是按照时间倒序接着的
 func TestFeedVideos(t *testing.T) {
 	// ? 暂缺带 token 的测试，好像也不清楚具体要测试的地方
 
@@ -104,7 +105,7 @@ func TestFeedVideosMultiThreads(t *testing.T) {
 	wg.Wait()
 }
 
-
+// 
 func TestPublishList(t *testing.T) {
 	// ------------- 测试准备 -----------------
 
@@ -115,7 +116,7 @@ func TestPublishList(t *testing.T) {
 
 	// 设置请求参数
 	request := video.NewPublishListRequest()
-	request.UserId = 17
+	request.UserId = 13
 
 	// 将请求参数绑定到 GIN context
 	ctx.Set("request", request)
@@ -126,6 +127,7 @@ func TestPublishList(t *testing.T) {
 	// ------------- 简单调用测试 -----------------
 
 	if should.NoError(err, "不出现错误") && should.NotNil(set, "不返回空响应") {
+		t.Logf("用户 %v 发布的视频数: %v \n", request.UserId, len(set.VideoList));
 		t.Log("VideoList:", set.VideoList)
 	} else if err != nil {
 		// 错误处理逻辑
@@ -133,29 +135,27 @@ func TestPublishList(t *testing.T) {
 	}
 
 	// 有待添加具体错误类型的判断
-
-	// ------------- 并发查询测试 -----------------
-	// var wg sync.WaitGroup
-	// const numWorkers = 10
-	// wg.Add(numWorkers)
-
-	// for i := 0; i < numWorkers; i++ {
-	// 	go func() {
-	// 		defer wg.Done()
-
-	// 		request := video.NewPublishListRequest()
-	// 		request.UserId = 17
-
-	// 		set, err := service.PublishList(context.Background(), request)
-
-	// 		if should.NoError(err, "不出现错误") && should.NotNil(set, "不返回空响应") {
-	// 			t.Log("VideoList:", set.VideoList)
-	// 		}
-	// 	}()
-	// }
-
-	// wg.Wait()
 }
+
+func TestPublishListMultiThreads(t *testing.T) {
+	// ------------- 并发查询测试 -----------------
+	var wg sync.WaitGroup
+	const numWorkers = 10
+	wg.Add(numWorkers)
+
+	for i := 0; i < numWorkers; i++ {
+		go func() {
+			defer wg.Done()
+			// 往下填充需要并发测试的部分
+			t.Run("PublishList", TestPublishList)
+		}()
+	}
+
+	wg.Wait()
+}
+
+
+
 
 func TestGetVideo(t *testing.T) {
 	should := assert.New(t)
